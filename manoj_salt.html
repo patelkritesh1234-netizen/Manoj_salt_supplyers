@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manoj Salt Suppliers</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+    header {
+      background: #232f3e;
+      color: white;
+      padding: 10px;
+      text-align: center;
+    }
+    nav {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      background: #37475a;
+    }
+    nav a {
+      color: white;
+      padding: 10px;
+      text-decoration: none;
+      flex: 1;
+      text-align: center;
+    }
+    nav a:hover {
+      background: #232f3e;
+    }
+    .container {
+      padding: 15px;
+    }
+    .section {
+      display: none;
+    }
+    .active {
+      display: block;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+    button {
+      background: #ff9900;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #e68a00;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #232f3e;
+      color: white;
+    }
+    /* ✅ Responsive Design */
+    @media (max-width: 600px) {
+      nav {
+        flex-direction: column;
+      }
+      nav a {
+        flex: none;
+        border-bottom: 1px solid #444;
+      }
+      table, th, td {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Manoj Salt Suppliers</h1>
+    <p>Pure & Quality Salt Delivered To You</p>
+  </header>
+
+  <!-- Navigation -->
+  <nav>
+    <a onclick="showSection('home')">Home</a>
+    <a onclick="showSection('items')">Items</a>
+    <a onclick="showSection('cart')">Cart</a>
+    <a onclick="showSection('orders')">All Orders</a>
+    <a onclick="showSection('login')">Login</a>
+    <a onclick="showSection('seller')">Seller Login</a>
+  </nav>
+
+  <!-- Home -->
+  <div id="home" class="container section active">
+    <h2>Welcome to Manoj Salt Suppliers</h2>
+    <p>We supply the best quality salt at affordable prices. Please login to start shopping.</p>
+  </div>
+
+  <!-- Items -->
+  <div id="items" class="container section">
+    <h2>Available Salt Items</h2>
+    <div>
+      <p><b>Rock Salt</b> - ₹50/kg</p>
+      <button onclick="addToCart('Rock Salt',50)">Add to Cart</button>
+      <button onclick="buyNow('Rock Salt',50)">Buy Now</button>
+    </div>
+    <div>
+      <p><b>Sea Salt</b> - ₹40/kg</p>
+      <button onclick="addToCart('Sea Salt',40)">Add to Cart</button>
+      <button onclick="buyNow('Sea Salt',40)">Buy Now</button>
+    </div>
+  </div>
+
+  <!-- Cart -->
+  <div id="cart" class="container section">
+    <h2>Cart</h2>
+    <div id="cartItems"></div>
+  </div>
+
+  <!-- All Orders -->
+  <div id="orders" class="container section">
+    <h2>All Orders</h2>
+    <div id="orderItems"></div>
+  </div>
+
+  <!-- Customer Login -->
+  <div id="login" class="container section">
+    <h2>Customer Login / Register</h2>
+    <form onsubmit="customerLogin(event)">
+      <input type="text" id="custEmail" placeholder="Email or Mobile" required>
+      <input type="password" id="custPassword" placeholder="Password" required>
+      <input type="text" id="custAddress" placeholder="Address" required>
+      <button type="submit">Login / Register</button>
+    </form>
+    <div id="savedLogin"></div>
+  </div>
+
+  <!-- Seller Login -->
+  <div id="seller" class="container section">
+    <h2>Seller Login</h2>
+    <form onsubmit="sellerLogin(event)">
+      <input type="text" id="sellerUser" placeholder="Username" required>
+      <input type="password" id="sellerPass" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+    <div id="sellerOrders"></div>
+    <div id="acceptedOrders"></div>
+  </div>
+
+<script>
+  let loggedInUser = null;
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  let userOrders = JSON.parse(localStorage.getItem("userOrders")) || [];
+  let sellerOrders = JSON.parse(localStorage.getItem("sellerOrders")) || [];
+
+  // Navigation
+  function showSection(id){
+    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(id === 'cart') loadCart();
+    if(id === 'orders') loadOrders();
+    if(id === 'seller') loadSellerOrders();
+  }
+
+  // Add to Cart
+  function addToCart(item, price){
+    if(!loggedInUser){ alert("Please login first!"); return; }
+    cart.push({item, price, qty:1});
+    localStorage.setItem("cart", JSON.stringify(cart));
+    alert(item+" added to cart");
+  }
+
+  // Buy Now
+  function buyNow(item, price){
+    if(!loggedInUser){ alert("Please login first!"); return; }
+    let order = { item, price, qty:1, user:loggedInUser, status:"Pending" };
+    userOrders.push(order);
+    sellerOrders.push(order);
+    localStorage.setItem("userOrders", JSON.stringify(userOrders));
+    localStorage.setItem("sellerOrders", JSON.stringify(sellerOrders));
+    alert("Order placed for "+item);
+  }
+
+  // Load Cart
+  function loadCart(){
+    let cartItemsDiv = document.getElementById("cartItems");
+    if(cart.length === 0){
+      cartItemsDiv.innerHTML = "<p>No items in cart.</p>";
+      return;
+    }
+    let html = "<table><tr><th>Item</th><th>Qty</th><th>Price</th></tr>";
+    cart.forEach(c=>{
+      html += `<tr><td>${c.item}</td><td>${c.qty}</td><td>₹${c.price*c.qty}</td></tr>`;
+    });
+    html += "</table>";
+    cartItemsDiv.innerHTML = html;
+  }
+
+  // Load Orders
+  function loadOrders(){
+    let orderItemsDiv = document.getElementById("orderItems");
+    if(userOrders.length === 0){
+      orderItemsDiv.innerHTML = "<p>No orders placed yet.</p>";
+      return;
+    }
+    let html = "<table><tr><th>Item</th><th>Qty</th><th>Total Price</th><th>Status</th></tr>";
+    userOrders.forEach(order=>{
+      html += `<tr>
+                <td>${order.item}</td>
+                <td>${order.qty}</td>
+                <td>₹${order.price * order.qty}</td>
+                <td>${order.status}</td>
+              </tr>`;
+    });
+    html += "</table>";
+    orderItemsDiv.innerHTML = html;
+  }
+
+  // Customer Login/Register
+  function customerLogin(e){
+    e.preventDefault();
+    let email = document.getElementById("custEmail").value;
+    let pass = document.getElementById("custPassword").value;
+    let addr = document.getElementById("custAddress").value;
+
+    let user = { email, pass, addr };
+    localStorage.setItem("savedUser", JSON.stringify(user));
+    loggedInUser = user;
+    alert("Login successful!");
+    showSection('items');
+    showSavedLogin();
+  }
+
+  function showSavedLogin(){
+    let saved = localStorage.getItem("savedUser");
+    if(saved){
+      let user = JSON.parse(saved);
+      document.getElementById("savedLogin").innerHTML = `
+        <p>Saved login found for <b>${user.email}</b></p>
+        <button onclick="autoLogin()">OK & Confirm Login</button>
+        <button onclick="logout()">Logout</button>
+      `;
+    }
+  }
+
+  function autoLogin(){
+    let saved = localStorage.getItem("savedUser");
+    if(saved){
+      loggedInUser = JSON.parse(saved);
+      alert("Auto Login successful!");
+      showSection('items');
+    }
+  }
+
+  function logout(){
+    localStorage.removeItem("savedUser");
+    loggedInUser = null;
+    alert("Logged out!");
+    document.getElementById("savedLogin").innerHTML = "";
+    showSection('home');
+  }
+
+  // Seller Login
+  function sellerLogin(e){
+    e.preventDefault();
+    let user = document.getElementById("sellerUser").value;
+    let pass = document.getElementById("sellerPass").value;
+    if(user==="mgpatel" && pass==="mg1802"){
+      alert("Seller Login Successful!");
+      loadSellerOrders();
+    } else {
+      alert("Invalid Seller Credentials");
+    }
+  }
+
+  function loadSellerOrders(){
+    let div = document.getElementById("sellerOrders");
+    if(sellerOrders.length === 0){
+      div.innerHTML = "<p>No new orders.</p>";
+      return;
+    }
+    let html = "<h3>New Orders</h3><table><tr><th>Customer</th><th>Address</th><th>Item</th><th>Qty</th><th>Total</th><th>Action</th></tr>";
+    sellerOrders.forEach((o,i)=>{
+      if(o.status==="Pending"){
+        html += `<tr>
+                  <td>${o.user.email}</td>
+                  <td>${o.user.addr}</td>
+                  <td>${o.item}</td>
+                  <td>${o.qty}</td>
+                  <td>₹${o.price*o.qty}</td>
+                  <td>
+                    <button onclick="confirmOrder(${i})">Confirm</button>
+                    <button onclick="cancelOrder(${i})">Cancel</button>
+                  </td>
+                </tr>`;
+      }
+    });
+    html += "</table>";
+    div.innerHTML = html;
+  }
+
+  function confirmOrder(i){
+    sellerOrders[i].status="Confirmed";
+    userOrders[i].status="Confirmed";
+    localStorage.setItem("sellerOrders", JSON.stringify(sellerOrders));
+    localStorage.setItem("userOrders", JSON.stringify(userOrders));
+    loadSellerOrders();
+    loadOrders();
+  }
+
+  function cancelOrder(i){
+    sellerOrders[i].status="Canceled";
+    userOrders[i].status="Canceled";
+    localStorage.setItem("sellerOrders", JSON.stringify(sellerOrders));
+    localStorage.setItem("userOrders", JSON.stringify(userOrders));
+    loadSellerOrders();
+    loadOrders();
+  }
+
+  // On Load
+  window.onload = function(){
+    showSavedLogin();
+  }
+</script>
+
+</body>
+</html>
